@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GLOBE IQ - Explore Earth & Beyond</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      body,
+      html {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        font-family: "IBM Plex Mono", monospace;
+        color: white;
+        background: #111;
+        overflow-x: hidden;
+      }
+
+      #canvasContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+      }
+
+      .prompt-box {
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.5s ease-in-out;
+      }
+      .prompt-box.visible {
+        visibility: visible;
+        opacity: 1;
+      }
+        /* Button Glow Effect */
+        .btn-glow {
+            border: 1px solid #00c3ff;
+            box-shadow: 0px 0px 8px 2px #00c3ff;
+            background-color: #00c3ff22;
+            transition: all 0.3s ease;
+        }
+
+            .btn-glow:hover {
+                background-color: #00c3ff;
+                box-shadow: 0px 0px 20px 5px #00c3ff;
+                color: white;
+            }
+        .navi {
+            display: flex;
+            flex-flow: row;
+            justify-content: space-between;
+        }
+    </style>
+  </head>
+  <body>
+      <!-- 3D Canvas -->
+      <div id="canvasContainer"></div>
+
+      <!-- Overlay UI with Tailwind -->
+      <header class="fixed top-0 left-0 w-full z-10 p-5 flex justify-between items-center bg-transparent navi">
+          <h1 class="text-4xl font-bold text-white">Features</h1>
+          <nav class="space-x-4">
+              <a href="/" class="text-white hover:text-blue-500 transition">Home</a>
+              <a href="#features" class="text-white hover:text-blue-500 transition">Features</a>
+              <a href="./resources.html" class="text-white hover:text-blue-500 transition">Resources</a>
+              <button id="toggle-btn"
+                      class="mt-10 px-6 py-3 font-bold text-white btn-glow rounded-lg transition">
+                  Explore
+              </button>
+          </nav>
+      </header>
+
+      <!-- Discover More Button -->
+      <div class="fixed bottom-10 left-1/2 transform -translate-x-1/2">
+          <button id="discoverBtn"
+                  class="bg-blue-500 text-white font-bold py-3 px-8 rounded-md shadow-lg hover:bg-white hover:text-blue-500 transition">
+              Discover More
+          </button>
+      </div>
+
+      <!-- Info Box -->
+      <section id="infoBox"
+               class="absolute bottom-32 right-5 p-6 bg-gray-800 bg-opacity-75 rounded-lg shadow-lg max-w-xs z-10 animate__animated">
+          <h2 class="text-2xl font-bold">What Is GLOBE IQ?</h2>
+          <p class="text-gray-400 mt-2">
+              The GLOBE IQ project aims to integrate GLOBE protocols into an educational platform featuring multiple mini-games.
+          </p>
+      </section>
+
+      <!-- Discover Prompt -->
+      <div id="promptBox"
+           class="prompt-box fixed bottom-1/2 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-gray-900 p-6 rounded-lg text-center text-white shadow-xl animate__animated">
+          <p>
+              By focusing on engaging gameplay that utilizes GLOBE protocols and aligns with educational objectives, GLOBE IQ can create a meaningful learning experience not only for students but also for techers, researchers and enthusiasts while fostering environmental awareness.
+          </p>
+      </div>
+
+      <!-- Importmap for Three.js -->
+      <script type="importmap">
+          {
+            "imports": {
+              "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+              "OrbitControls": "https://unpkg.com/three@0.155.0/examples/jsm/controls/OrbitControls.js"
+            }
+          }
+      </script>
+
+      <script type="module">
+          import * as THREE from "three";
+          import { OrbitControls } from "OrbitControls";
+
+          // Scene setup
+          const container = document.getElementById("canvasContainer");
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(
+              60,
+              window.innerWidth / window.innerHeight,
+              0.1,
+              1000
+          );
+          camera.position.set(0, 0, 6);
+
+          const renderer = new THREE.WebGLRenderer({ alpha: true });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          container.appendChild(renderer.domElement);
+
+          // Orbit controls
+          const controls = new OrbitControls(camera, renderer.domElement);
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.05;
+          controls.minDistance = 3;
+          controls.maxDistance = 10;
+
+          //Day Night Switch
+
+          const currentHour = new Date().getHours();
+          var earth = '';
+          if (currentHour >= 6 && currentHour < 18) {
+              // Day Mode: From 6 AM to 6 PM
+             earth = './earth_day.jpg'
+          } else {
+              // Night Mode: From 6 PM to 6 AM
+              earth = './earth_night.jpg'
+
+          }
+
+
+          // Earth Sphere (Globe)
+          const globeGeometry = new THREE.SphereGeometry(1.5, 64, 64);
+          const globeMaterial = new THREE.MeshStandardMaterial({
+              map: new THREE.TextureLoader().load(earth),
+              roughness: 1,
+              metalness: 0,
+          });
+          const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+          scene.add(globe);
+
+          // Dynamic Lighting
+          const ambientLight = new THREE.AmbientLight(0x333333, 1);
+          scene.add(ambientLight);
+
+          const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+          pointLight.position.set(5, 5, 5);
+          scene.add(pointLight);
+
+          const hemisphereLight = new THREE.HemisphereLight(0x6a8dff, 0xffffff, 1);
+          hemisphereLight.position.set(0, 5, 0);
+          scene.add(hemisphereLight);
+
+          // Satellite Model
+          const satelliteGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+          const satelliteMaterial = new THREE.MeshStandardMaterial({
+              color: 0xffffff,
+          });
+          const satellite = new THREE.Mesh(satelliteGeometry, satelliteMaterial);
+          satellite.position.set(2, 0, 0);
+          scene.add(satellite);
+
+          // Floating Data Point
+          const dataPointGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+          const dataPointMaterial = new THREE.MeshStandardMaterial({
+              color: 0xffcc00,
+          });
+          const dataPoint = new THREE.Mesh(dataPointGeometry, dataPointMaterial);
+          dataPoint.position.set(-1, 1.5, 1);
+          scene.add(dataPoint);
+
+          // Mouse Interaction for Models
+          let mouseX = 0;
+          let mouseY = 0;
+
+          document.addEventListener("mousemove", (event) => {
+              mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+              mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+
+              satellite.position.x = 2 + mouseX * 1.5;
+              satellite.position.y = mouseY * 1.5;
+              dataPoint.position.x = -1 + mouseX * 0.5;
+              dataPoint.position.y = 1.5 + mouseY * 0.5;
+          });
+          // Animation loop
+          function animate() {
+              requestAnimationFrame(animate);
+              globe.rotation.y += 0.001;
+              satellite.rotation.y += 0.02;
+              satellite.rotation.x += 0.01;
+              dataPoint.position.y += Math.sin(Date.now() * 0.001) * 0.005;
+              controls.update();
+              renderer.render(scene, camera);
+          }
+
+          animate();
+
+          // Responsive resizing
+          window.addEventListener("resize", () => {
+              camera.aspect = window.innerWidth / window.innerHeight;
+              camera.updateProjectionMatrix();
+              renderer.setSize(window.innerWidth, window.innerHeight);
+          });
+
+          // Discover Button and Prompt
+          const discoverBtn = document.getElementById("discoverBtn");
+          const promptBox = document.getElementById("promptBox");
+          const infoBox = document.getElementById("infoBox");
+          let click = 0;
+          infoBox.classList.add("animate__fadeInRight");
+          discoverBtn.classList.add("animate__fadeInUp");
+          discoverBtn.addEventListener("click", () => {
+              if (click === 0) {
+                  discoverBtn.innerHTML = "Go Back";
+                  click = 1;
+                  camera.position.set(0, 0, 3);
+                  controls.maxDistance = 5;
+                  promptBox.classList.add("visible", "animate__fadeIn");
+                  infoBox.classList.add("animate__fadeOut");
+                  setTimeout(() => {
+                      infoBox.style.display = "none";
+                  }, 1000);
+              } else {
+                  discoverBtn.innerHTML = "Discover More";
+                  click = 0;
+                  camera.position.set(0, 0, 6);
+                  controls.maxDistance = 10;
+                  promptBox.classList.remove("visible", "animate__fadeIn");
+                  promptBox.classList.add("animate__fadeOut");
+                  setTimeout(() => {
+                      promptBox.classList.remove("animate__fadeOut");
+                  }, 1000);
+                  infoBox.style.display = "block";
+                  infoBox.classList.remove("animate__fadeOut");
+                  infoBox.classList.add(" animate__fadeIn");
+              }
+          });
+
+          // Scroll-triggered Camera Movements
+          window.addEventListener("scroll", () => {
+              const scrollY = window.scrollY;
+              if (scrollY > 100) {
+                  camera.position.set(0, 0, 10);
+              }
+              if (scrollY > 1000) {
+                  camera.position.set(0, 0, 15);
+              }
+          });
+      </script>
+  </body>
+</html>
